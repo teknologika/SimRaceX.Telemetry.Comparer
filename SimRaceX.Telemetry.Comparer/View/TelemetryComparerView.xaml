@@ -131,25 +131,6 @@
                 </StackPanel>
                 <StackPanel
                     Grid.Column="1">
-                    <!--IsiRacingReplay-->
-                    <StackPanel                        
-                        Orientation="Horizontal"
-                        VerticalAlignment="Top"
-                        Margin="20,10,0,0"
-                        Visibility="{Binding IsiRacingReplay, Converter={StaticResource boolToVis}}"
-                        >
-                        <TextBlock
-                            Text="Discard invalid lap (iRacing only)"
-                            Width="200"
-                            VerticalAlignment="Center"
-                        />
-                        <styles:SHToggleButton
-                                              
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Top"
-                            IsChecked="{Binding Settings.IsRecordingFromReplay, UpdateSourceTrigger=PropertyChanged}"
-                            />
-                    </StackPanel>
                     <StackPanel
                         Grid.Row="0"
                         Orientation="Horizontal"

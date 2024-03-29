@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,6 +24,10 @@ namespace SimRaceX.Telemetry.Comparer.Model
         private string _PluginVersion;
         //private bool _UseAsReferenceLap;
         #endregion
+
+        override public string ToString() {
+            return  $"{TrackCode} - {PlayerName} - {CarName} - {LapTime.ToString(@"mm\:ss\.fff")} - {SetupType}"; ;
+        }
 
         #region Properties
         public string GameName

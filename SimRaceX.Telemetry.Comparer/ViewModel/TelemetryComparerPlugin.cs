@@ -917,6 +917,7 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
             PluginManager.AddProperty("ReferenceLapGear", this.GetType(), "");
             PluginManager.AddProperty("ReferenceLapTime", this.GetType(), new TimeSpan(0, 0, 0));
             PluginManager.AddProperty("ReferenceLapPlayerName", this.GetType(), "");
+            PluginManager.AddProperty("ReferenceLapSetupType", this.GetType(), "");
             PluginManager.AddProperty("ReferenceLapSteeringAngle", this.GetType(), SteeringAngle);
             PluginManager.AddProperty("ShowBrakeTrace", this.GetType(), Settings.ShowBrakeTrace);
             PluginManager.AddProperty("ShowThrottleTrace", this.GetType(), Settings.ShowThrottleTrace);
@@ -926,6 +927,7 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
             PluginManager.AddProperty("SelectedComparisonMode", this.GetType(), Settings.SelectedComparisonMode.Value);
             PluginManager.AddProperty("SteeringAngle", this.GetType(), SteeringAngle);
             PluginManager.AddProperty("ReferenceLapSet", this.GetType(), false);
+            PluginManager.AddProperty("ReferenceLapSetupType", this.GetType(), "");
             PluginManager.AddProperty("PersonalBestDiscardInvalidLap", this.GetType(), Settings.PersonalBestDiscardInvalidLap);
             PluginManager.AddProperty("SessionBestDiscardInvalidLap", this.GetType(), Settings.SessionBestDiscardInvalidLap);
             PluginManager.AddProperty("ReferenceLapDeltaTime", this.GetType(), new TimeSpan(0, 0, 0));
@@ -956,6 +958,7 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
             SelectedCarTrackTelemetry = null;           
             PluginManager.SetPropertyValue("ReferenceLapTime", this.GetType(), new TimeSpan(0, 0, 0));
             PluginManager.SetPropertyValue("ReferenceLapPlayerName", this.GetType(), "");
+            PluginManager.SetPropertyValue("ReferenceLapSetupType", this.GetType(), "");
             PluginManager.AddProperty("ReferenceLapSet", this.GetType(), false);
             PluginManager.TriggerEvent("ReferenceLapChanged", this.GetType());
         }
@@ -1191,15 +1194,23 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                 dynamic lastLaps = manager.GetPropertyValue("DataCorePlugin.GameRawData.Telemetry.CarIdxLastLapTime");
 
                 double LastObservedLapTimeInSeconds = 0.0;
+                TimeSpan LastObservedLapTime = TimeSpan.Zero;
                 if (isSimHubReplay || isiRacingReplay) {
                     isReplay = true;
                     if (data?.NewData?.GetRawDataObject() is DataSampleEx) {
                         DataSampleEx irData = data.NewData.GetRawDataObject() as DataSampleEx;
                         LastObservedLapTimeInSeconds = lastLaps[irData.Telemetry.CamCarIdx];
+                        LastObservedLapTime = TimeSpan.FromSeconds(LastObservedLapTimeInSeconds);
+                    }
+                }
+                else {
+                    if (data?.NewData?.GetRawDataObject() is DataSampleEx) {
+                        DataSampleEx irData = data.NewData.GetRawDataObject() as DataSampleEx;
+                        LastObservedLapTime = data.NewData.LastLapTime;
                     }
                 }
 
-                TimeSpan LastObservedLapTime = TimeSpan.FromSeconds(LastObservedLapTimeInSeconds);
+                 
 
                 if (isReplay || (data.NewData.CurrentLapTime.TotalMilliseconds > 0)) {
                     if (isReplay) {
@@ -1284,6 +1295,8 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                     {
                         manager.SetPropertyValue("ReferenceLapTime", this.GetType(), latestLapTelemetry.LapTime);
                         manager.SetPropertyValue("ReferenceLapPlayerName", this.GetType(), latestLapTelemetry.PlayerName);
+                        manager.SetPropertyValue("ReferenceLapSetupType", this.GetType(), latestLapTelemetry.SetupType);
+
                         manager.TriggerEvent("ReferenceLapChanged", this.GetType());
                         SetReferenceLap();
 
@@ -1310,6 +1323,7 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
             {
                 PluginManager.SetPropertyValue("ReferenceLapTime", this.GetType(), SelectedCarTrackTelemetry.LapTime);
                 PluginManager.SetPropertyValue("ReferenceLapPlayerName", this.GetType(), SelectedCarTrackTelemetry.PlayerName);
+                PluginManager.SetPropertyValue("ReferenceLapSetupType", this.GetType(), SelectedCarTrackTelemetry.SetupType);
                 PluginManager.SetPropertyValue("ReferenceLapSet", this.GetType(), true);
                 PluginManager.TriggerEvent("ReferenceLapChanged", this.GetType());
 
