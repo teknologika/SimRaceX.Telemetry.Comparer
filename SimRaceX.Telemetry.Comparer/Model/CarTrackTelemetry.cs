@@ -55,6 +55,7 @@ namespace SimRaceX.Telemetry.Comparer.Model
             get { return _PlayerName; }
             set { _PlayerName = value; OnPropertyChanged(nameof(PlayerName)); }
         }
+
         public string TrackCode
         {
             get { return _TrackCode; }
@@ -65,9 +66,11 @@ namespace SimRaceX.Telemetry.Comparer.Model
         //    get { return _UseAsReferenceLap; }
         //    set { _UseAsReferenceLap = value; OnPropertyChanged(nameof(UseAsReferenceLap));}
         //}
+
+        // here 1
         public string FormattedPlayerNameLapTime
         {
-            get { return $"{PlayerName} - {LapTime.ToString(@"mm\:ss\.fff")}"; }
+            get { return $"{PlayerName} - {LapTime.ToString(@"mm\:ss\.fff")} - {SetupType}"; }
         }
         public string FormattedPlayerNameCarLapTime
         {

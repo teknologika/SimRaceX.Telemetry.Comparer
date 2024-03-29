@@ -33,6 +33,10 @@ using WoteverCommon;
 using System.IO.Ports;
 using OxyPlot.Axes;
 using System.Windows.Markup;
+using System.Xml.Linq;
+
+using IRacingReader;
+
 
 namespace SimRaceX.Telemetry.Comparer.ViewModel
 {
@@ -227,8 +231,8 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                                         x.GameName == gameName
                                         && x.TrackCode == trackCode
                                         && x.CarName == carModel
-                                        && x.PlayerName != playerName
-                                        && x.IsFixedSetup == _IsFixedSetupSession
+                                        && x.PlayerName != playerName //
+                                       // && x.IsFixedSetup == _IsFixedSetupSession //
                                         ).ToList();
             }
         }
@@ -440,6 +444,10 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
             get { return _Position; }
             set { _Position = value; OnPropertyChanged(nameof(Position)); }
         }
+
+        private bool _lineCrossed = false;
+        
+        
         #endregion
 
         #region Commands
@@ -718,13 +726,74 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                                 )
                                 //try to load a reference lap
                                 SetReferenceLap();
-                      
-                            if (_CurrentLapTelemetry is null)
-                                ResetCurrentLapTelemetry();
 
-                            //Add data to current lap telemetry
-                            if (data.NewData.CurrentLapTime.TotalMilliseconds > 0)
+                            if (_CurrentLapTelemetry is null) {
+                                ResetCurrentLapTelemetry();
+                            }
+
+
+                            // if we are in a simhub replay or watching an iRacing replay
+                            bool isReplay = false;
+                            bool isSimHubReplay = data.NewData.ReplayMode == "Replay";
+                            bool isiRacingReplay = Convert.ToBoolean(pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Telemetry.IsReplayPlaying"));
+                            
+                            if (isSimHubReplay || isiRacingReplay ) {
+                                isReplay = true;
+                            }
+
+                            double LastObservedLapTimeInSeconds = -1 ;
+                            TimeSpan LastObservedLapTime = TimeSpan.FromSeconds(0.0) ;
+
+                            if (gameName == "IRacing") {
+                                // if we are watching an iRacing replay
+                                if (isReplay) {
+                                    // Grab an array of float[] which has all the last lap times for all cars
+                                    dynamic lastLaps = pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Telemetry.CarIdxLastLapTime");
+
+                                    // get the duraton of the last lap we just watched, and check for a line cross
+                                    if (data?.NewData?.GetRawDataObject() is DataSampleEx) {
+                                        DataSampleEx irData = data.NewData.GetRawDataObject() as DataSampleEx;
+
+                                        // Check for line cross because the event doesn't throw in a replay
+                                        double trackPosition = irData.Telemetry.LapDistPct;
+                
+                                        // if we crossed the line, set line cross to true
+                                        if (trackPosition < 0.02) {
+                                            _lineCrossed = true;
+                                        }
+                                        // if the threshold is greater set to false
+                                        if (trackPosition > 0.02) {
+                                            _lineCrossed = false;
+                                        }
+
+                                        // irData.Telemetry.CamCarIdx is the Observed car in iRacing
+                                        LastObservedLapTimeInSeconds = lastLaps[irData.Telemetry.CamCarIdx];
+                                        LastObservedLapTime = TimeSpan.FromSeconds(LastObservedLapTimeInSeconds);
+
+
+
+                                        // if we crossed the start finish line call the new lap function
+                                        if (tickCount == 3 && _lineCrossed) {
+                                            PluginManager_NewLap(data.NewData.CompletedLaps, false, pluginManager, ref data);
+
+                                            // After processing, reset linecross
+                                            _lineCrossed = false;
+                                        }
+                                    }                          
+                                }
+                            }
+
+
+                            // if it is a replay or the Current lap time us going up add data to current lap telemetry
+                            if (isReplay || (data.NewData.CurrentLapTime.TotalMilliseconds > 0))
                             {
+                                TimeSpan LapTimeToPost;
+                                if (isReplay) {
+                                    LapTimeToPost = TimeSpan.FromTicks(Convert.ToInt64(LastObservedLapTime.Ticks * data.NewData.TrackPositionPercent));
+                                }
+                                else {
+                                    LapTimeToPost = data.NewData.CurrentLapTime;
+                                }
                                 if (_CurrentLapTelemetry.Count == 0 || _CurrentLapTelemetry.Last().LapDistance < data.NewData.TrackPositionPercent)
                                     _CurrentLapTelemetry.Add(new TelemetryData
                                     {
@@ -735,7 +804,7 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                                         Speed = data.NewData.SpeedKmh,
                                         Gear = data.NewData.Gear,
                                         SteeringAngle = SteeringAngle,
-                                        LapTime = data.NewData.CurrentLapTime
+                                        LapTime = LapTimeToPost
                                     });
 
                             }
@@ -756,6 +825,7 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                                             break;
                                         }
                                 }
+
                                 //loop reverse (in order to minimize possible number of iterations)
                                 else
                                 {
@@ -949,6 +1019,13 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
             string playerName = PluginManager.LastData.NewData.PlayerName;
             string trackCode = PluginManager.LastData.NewData.TrackCode;
 
+            if (Settings.CompareFixedAndOpen) {
+            }
+            else {
+
+            }
+
+
             return _Settings.CarTrackTelemetries.FirstOrDefault(x =>
                     x.GameName == gameName
                     && x.TrackCode == trackCode
@@ -1071,8 +1148,7 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
             OnPropertyChanged(nameof(FiltersAvailable));
             if (!_FilterCurrentGameTrackCarTelemetries)
                 return;
-            if (PluginManager.LastData != null && PluginManager.LastData.NewData != null)
-            {
+            if (PluginManager.LastData != null && PluginManager.LastData.NewData != null) {
                 _SelectedFilteredGame = FilteredGames.FirstOrDefault(x => x.Equals(PluginManager.LastData.GameName));
                 _SelectedFilteredTrack = FilteredTracks.FirstOrDefault(x => x.Equals(PluginManager.LastData.NewData.TrackCode));
                 _SelectedFilteredCar = FilteredCars.FirstOrDefault(x => x.Equals(PluginManager.LastData.NewData.CarModel));
@@ -1105,9 +1181,36 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
 
                 double firstDataDistance = _CurrentLapTelemetry.First().LapDistance;
                 double lastDataDistance = _CurrentLapTelemetry.Last().LapDistance;
+
+                TimeSpan LapTimeToPost = data.NewData.CurrentLapTime;
+
+                // if we are in a simhub replay or watching an iRacing replay
+                bool isReplay = false;
+                bool isSimHubReplay = data.NewData.ReplayMode == "Replay";
+                bool isiRacingReplay = Convert.ToBoolean(manager.GetPropertyValue("DataCorePlugin.GameRawData.Telemetry.IsReplayPlaying"));
+                dynamic lastLaps = manager.GetPropertyValue("DataCorePlugin.GameRawData.Telemetry.CarIdxLastLapTime");
+
+                double LastObservedLapTimeInSeconds = 0.0;
+                if (isSimHubReplay || isiRacingReplay) {
+                    isReplay = true;
+                    if (data?.NewData?.GetRawDataObject() is DataSampleEx) {
+                        DataSampleEx irData = data.NewData.GetRawDataObject() as DataSampleEx;
+                        LastObservedLapTimeInSeconds = lastLaps[irData.Telemetry.CamCarIdx];
+                    }
+                }
+
+                TimeSpan LastObservedLapTime = TimeSpan.FromSeconds(LastObservedLapTimeInSeconds);
+
+                if (isReplay || (data.NewData.CurrentLapTime.TotalMilliseconds > 0)) {
+                    if (isReplay) {
+                        LapTimeToPost = TimeSpan.FromTicks(Convert.ToInt64(LastObservedLapTime.Ticks * data.NewData.TrackPositionPercent));
+                    }
+                }
+
                 //Try to check if a complete lap has be done
                 if (firstDataDistance < 0.1 && lastDataDistance > 0.9 && data.OldData.IsLapValid)
                 {
+                    SimHub.Logging.Current.Info("SimRaceX.Telemetry.Comparer : New Lap Time to post");
                     var latestLapTelemetry = new CarTrackTelemetry
                     {
                         GameName = manager.GameName,
@@ -1115,7 +1218,7 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                         TrackName = data.NewData.TrackName,
                         PlayerName = data.NewData.PlayerName,
                         TrackCode = data.NewData.TrackCode,
-                        LapTime = data.NewData.LastLapTime,
+                        LapTime = LastObservedLapTime,
                         TelemetryDatas = _CurrentLapTelemetry,
                         Created = DateTime.Now,
                         IsFixedSetup = _IsFixedSetupSession,
@@ -1124,6 +1227,7 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                   
                     bool isLatestLapFaster = false;
 
+                    // fix this
                     if (latestLapTelemetry.LapTime.TotalMilliseconds == 0) return;
 
                     if (PersonalBestTelemetry is null || latestLapTelemetry.LapTime.TotalMilliseconds < PersonalBestTelemetry.LapTime.TotalMilliseconds)

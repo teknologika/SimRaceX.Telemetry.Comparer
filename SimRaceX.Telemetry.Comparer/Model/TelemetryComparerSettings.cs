@@ -17,6 +17,7 @@ namespace SimRaceX.Telemetry.Comparer.Model
         private bool _ShowSpeedTrace;
         private bool _ShowGauges;
         private bool _ShowSteeringAngle;
+        private bool _CompareFixedAndOpen = true;
         private Dictionary<int, string> _ComparisonModes = new Dictionary<int, string>()
         {
             {0, "Personal best" },
@@ -26,6 +27,7 @@ namespace SimRaceX.Telemetry.Comparer.Model
         private KeyValuePair<int,string> _SelectedComparisonMode;
         private bool _PersonalBestDiscardInvalidLap;
         private bool _SessionBestDiscardInvalidLap;
+        private bool _IsRecordingFromReplay;
         #endregion
 
         #region Properties
@@ -34,6 +36,11 @@ namespace SimRaceX.Telemetry.Comparer.Model
             get { return _CarTrackTelemetries; }
             set { _CarTrackTelemetries = value; OnPropertyChanged(nameof(CarTrackTelemetries)); }
         }
+        public bool CompareFixedAndOpen {
+            get { return _CompareFixedAndOpen; }
+            set { _CompareFixedAndOpen = value; OnPropertyChanged(nameof(CompareFixedAndOpen)); }
+        }
+
         public bool ShowBrakeTrace
         {
             get { return _ShowBrakeTrace; }
@@ -78,6 +85,13 @@ namespace SimRaceX.Telemetry.Comparer.Model
             get { return _PersonalBestDiscardInvalidLap; }
             set { _PersonalBestDiscardInvalidLap = value; OnPropertyChanged(nameof(PersonalBestDiscardInvalidLap)); }
         }
+        public bool IsRecordingFromReplay {
+            get { return _IsRecordingFromReplay; }
+            set { _IsRecordingFromReplay = value; OnPropertyChanged(nameof(IsRecordingFromReplay)); }
+        }
+      
+
+
         public bool SessionBestDiscardInvalidLap
         {
             get { return _SessionBestDiscardInvalidLap; }

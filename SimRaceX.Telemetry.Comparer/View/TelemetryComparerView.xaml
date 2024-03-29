@@ -127,9 +127,29 @@
                     </StackPanel>
 
 
+
                 </StackPanel>
                 <StackPanel
                     Grid.Column="1">
+                    <!--IsiRacingReplay-->
+                    <StackPanel                        
+                        Orientation="Horizontal"
+                        VerticalAlignment="Top"
+                        Margin="20,10,0,0"
+                        Visibility="{Binding IsiRacingReplay, Converter={StaticResource boolToVis}}"
+                        >
+                        <TextBlock
+                            Text="Discard invalid lap (iRacing only)"
+                            Width="200"
+                            VerticalAlignment="Center"
+                        />
+                        <styles:SHToggleButton
+                                              
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Top"
+                            IsChecked="{Binding Settings.IsRecordingFromReplay, UpdateSourceTrigger=PropertyChanged}"
+                            />
+                    </StackPanel>
                     <StackPanel
                         Grid.Row="0"
                         Orientation="Horizontal"
@@ -140,7 +160,7 @@
                             Text="Comparison mode"
                             Width="200"
                             VerticalAlignment="Center"
-                        />                       
+                        />
                         <ComboBox
                             ItemsSource="{Binding Settings.ComparisonModes}"
                             SelectedItem="{Binding Settings.SelectedComparisonMode}"
@@ -206,7 +226,23 @@
                             Width="200"
                             />
                     </StackPanel>
-                    
+                    <StackPanel                        
+                        Orientation="Horizontal"
+                        VerticalAlignment="Top"
+                        Margin="20,10,0,0"
+                        Visibility="{Binding IsBestOfFriendMode, Converter={StaticResource boolToVis}}"
+                        >
+                        <TextBlock
+                            Text="Filter Fixed/Open Setups"
+                            Width="200"
+                            VerticalAlignment="Center"
+                        />
+                        <styles:SHToggleButton                                              
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Top"
+                            IsChecked="{Binding FilterFixedOpenSetups, UpdateSourceTrigger=PropertyChanged}"
+                        />
+                    </StackPanel>
                 </StackPanel>
                 <StackPanel
                      Margin="40,5,10,10"
@@ -234,10 +270,10 @@
        
 
         </styles:SHSection>
-        <!--Available telemetry datas-->
+        <!--Available telemetry data-->
         <styles:SHSection
            Grid.Row="1"
-           Title="Available telemetry datas">
+           Title="Available telemetry data">
             <StackPanel>
                 <Grid>
                     <StackPanel
@@ -256,10 +292,10 @@
                             IsChecked="{Binding FilterCurrentGameTrackCarTelemetries, UpdateSourceTrigger=PropertyChanged}"
                             />
                         <TextBlock
-                            Margin="60,0,0,0"
-                            Text="Game"
-                            VerticalAlignment="Center"
-                            />
+                             Margin="60,0,0,0"
+                             Text="Game"
+                             VerticalAlignment="Center"
+                        />
                         <ComboBox
                             Margin="10,0,0,0"
                             ItemsSource="{Binding FilteredGames}"                    
